@@ -12,12 +12,19 @@ export const authConfig = {
       return !!auth?.user;
     },
     jwt({ token, user }) {
-      if (user) token.uid = (user as { id: string }).id;
+      if (user) {
+        const u = user as { id: string; role?: string; username?: string };
+        token.uid = u.id;
+        token.role = u.role ?? "member";
+        token.username = u.username;
+      }
       return token;
     },
     session({ session, token }) {
-      if (session.user && token.uid) {
-        session.user.id = token.uid as string;
+      if (session.user) {
+        if (token.uid) session.user.id = token.uid as string;
+        session.user.role = (token.role as string) ?? "member";
+        session.user.username = token.username as string | undefined;
       }
       return session;
     },

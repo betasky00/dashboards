@@ -2,41 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { signOut } from "next-auth/react";
-import { LogOut } from "lucide-react";
 import {
   LayoutDashboard,
-  PlusSquare,
   CalendarDays,
   Settings,
   Users,
   BarChart2,
   Sparkles,
-  ChevronDown,
-  Plus,
   Newspaper,
   LayoutTemplate,
   Film,
   Palette,
   Library,
+  AtSign,
+  LogOut,
 } from "lucide-react";
-import { InstagramIcon, FacebookIcon, TikTokIcon } from "@/components/ui/SocialIcons";
 import { cn } from "@/lib/utils";
 
-interface Business {
-  id: string;
-  name: string;
-  color: string;
-  socialAccounts: { platform: string }[];
-}
-
 interface SidebarProps {
-  businesses: Business[];
-  currentBusinessId?: string;
+  role: string;
+  username?: string;
+  name?: string;
 }
 
-const nav = [
+const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/studio", label: "News Studio", icon: Newspaper },
   { href: "/reels", label: "Reel Remix", icon: Film },
@@ -44,24 +34,16 @@ const nav = [
   { href: "/library", label: "Library", icon: Library },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/brand", label: "Brand Kit", icon: Palette },
-  { href: "/accounts", label: "Accounts", icon: Users },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/brand", label: "Brand Kit", icon: Palette, admin: true },
+  { href: "/accounts", label: "Accounts", icon: AtSign, admin: true },
+  { href: "/team", label: "Team", icon: Users, admin: true },
+  { href: "/settings", label: "Settings", icon: Settings, admin: true },
 ];
 
-function PlatformIcon({ platform }: { platform: string }) {
-  if (platform === "instagram")
-    return <InstagramIcon className="w-3 h-3" style={{ color: "#E1306C" }} />;
-  if (platform === "facebook")
-    return <FacebookIcon className="w-3 h-3" style={{ color: "#1877F2" }} />;
-  return <TikTokIcon className="w-3 h-3 fill-[#1c1a17]" />;
-}
-
-export function Sidebar({ businesses, currentBusinessId }: SidebarProps) {
+export function Sidebar({ role, username, name }: SidebarProps) {
   const pathname = usePathname();
-  const [businessOpen, setBusinessOpen] = useState(true);
-
-  const currentBusiness = businesses.find((b) => b.id === currentBusinessId) ?? businesses[0];
+  const isAdmin = role === "admin";
+  const nav = NAV.filter((n) => !n.admin || isAdmin);
 
   return (
     <aside className="w-60 flex-shrink-0 flex flex-col h-screen bg-[#efeae1] border-r border-[#dbd4c7] sticky top-0">
@@ -75,62 +57,6 @@ export function Sidebar({ businesses, currentBusinessId }: SidebarProps) {
         </div>
       </div>
 
-      {/* Business Switcher */}
-      <div className="px-3 py-3 border-b border-[#dbd4c7]">
-        <button
-          onClick={() => setBusinessOpen(!businessOpen)}
-          className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-[#e3ddd0] transition-colors text-left"
-        >
-          {currentBusiness && (
-            <div
-              className="w-5 h-5 rounded-md flex-shrink-0"
-              style={{ backgroundColor: currentBusiness.color }}
-            />
-          )}
-          <span className="text-sm text-[#1c1a17] flex-1 truncate font-medium">
-            {currentBusiness?.name ?? "Select Business"}
-          </span>
-          <ChevronDown
-            className={cn("w-3.5 h-3.5 text-[#857f74] transition-transform", businessOpen && "rotate-180")}
-          />
-        </button>
-
-        {businessOpen && (
-          <div className="mt-1 space-y-0.5">
-            {businesses.map((b) => (
-              <Link
-                key={b.id}
-                href={`/dashboard?business=${b.id}`}
-                className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
-                  b.id === currentBusiness?.id
-                    ? "bg-[#dbd4c7] text-[#1c1a17]"
-                    : "text-[#6b655b] hover:text-[#1c1a17] hover:bg-[#e3ddd0]"
-                )}
-              >
-                <div
-                  className="w-3 h-3 rounded-sm flex-shrink-0"
-                  style={{ backgroundColor: b.color }}
-                />
-                <span className="flex-1 truncate">{b.name}</span>
-                <div className="flex gap-0.5">
-                  {b.socialAccounts.slice(0, 3).map((a, i) => (
-                    <PlatformIcon key={i} platform={a.platform} />
-                  ))}
-                </div>
-              </Link>
-            ))}
-            <Link
-              href="/settings/businesses/new"
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-[#857f74] hover:text-[#1c1a17] hover:bg-[#e3ddd0] transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              Add business
-            </Link>
-          </div>
-        )}
-      </div>
-
       {/* Nav */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {nav.map(({ href, label, icon: Icon }) => (
@@ -140,7 +66,7 @@ export function Sidebar({ businesses, currentBusinessId }: SidebarProps) {
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
               pathname === href || pathname.startsWith(href + "/")
-                ? "bg-[#1c1a17]/20 text-[#1c1a17] font-medium"
+                ? "bg-[#1c1a17]/10 text-[#1c1a17] font-medium"
                 : "text-[#6b655b] hover:text-[#1c1a17] hover:bg-[#e3ddd0]"
             )}
           >
@@ -156,10 +82,13 @@ export function Sidebar({ businesses, currentBusinessId }: SidebarProps) {
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-[#e3ddd0] cursor-pointer transition-colors"
         >
-          <div className="w-6 h-6 rounded-full bg-[#1c1a17] flex items-center justify-center text-xs text-[#f7f3ec] font-medium">
-            O
+          <div className="w-6 h-6 rounded-full bg-[#1c1a17] flex items-center justify-center text-xs text-[#f7f3ec] font-medium uppercase">
+            {(name || username || "U").charAt(0)}
           </div>
-          <span className="text-xs text-[#6b655b] flex-1 text-left">My Account</span>
+          <div className="flex-1 text-left min-w-0">
+            <p className="text-xs text-[#1c1a17] truncate">{name || username || "Account"}</p>
+            <p className="text-[10px] text-[#857f74] capitalize">{isAdmin ? "Admin" : "Member"}</p>
+          </div>
           <LogOut className="w-3.5 h-3.5 text-[#857f74]" />
         </button>
       </div>

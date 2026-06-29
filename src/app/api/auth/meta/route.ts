@@ -5,8 +5,8 @@ import { originFrom } from "@/lib/origin";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id || session.user.role !== "admin") {
+    return NextResponse.json({ error: "Admins only" }, { status: 403 });
   }
   await ensureOwner();
 

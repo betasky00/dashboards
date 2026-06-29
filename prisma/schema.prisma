@@ -11,15 +11,33 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String?   @unique
+  username      String?   @unique
+  passwordHash  String?
+  role          String    @default("member") // "admin" | "member"
   emailVerified DateTime?
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts   Account[]
-  sessions   Session[]
-  businesses Business[]
+  accounts      Account[]
+  sessions      Session[]
+  businesses    Business[]
+  accountAccess AccountAccess[]
+}
+
+// Which connected social accounts a team member is allowed to see/use.
+// Admins implicitly have access to everything, so they need no rows here.
+model AccountAccess {
+  id              String   @id @default(cuid())
+  userId          String
+  socialAccountId String
+  createdAt       DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, socialAccountId])
 }
 
 model Account {
@@ -90,6 +108,7 @@ model SocialAccount {
 
   business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   posts    PostAccount[]
+  access   AccountAccess[]
 
   @@unique([platform, accountId])
 }

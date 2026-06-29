@@ -12,6 +12,9 @@ export async function DELETE(
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role !== "admin") {
+    return NextResponse.json({ error: "Admins only" }, { status: 403 });
+  }
   const { id } = await params;
 
   // Only allow deleting accounts that belong to the owner's businesses.
